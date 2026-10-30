@@ -2,7 +2,6 @@
 
 Course Project for *Introduction to Natural Language Processing (INLP)*, IIIT Hyderabad
 
-
 ## Team
 
 - Jayant Gupta
@@ -15,11 +14,20 @@ Course Project for *Introduction to Natural Language Processing (INLP)*, IIIT Hy
 
 ## Project Overview
 
-This project investigates selective knowledge removal in large language models through mechanistic interpretability techniques. The goal is to remove knowledge associated with the *Harry Potter* domain from a pretrained llama-2-7b-chat model while preserving the model’s general linguistic and reasoning capabilities.
+![Harry Potter knowledge unlearning meme](pics/meme.png)
+
+This project investigates selective knowledge removal in large language models through mechanistic interpretability techniques. The goal is to remove knowledge associated with the *Harry Potter* domain from a pretrained Llama-2-7B-Chat model while preserving the model's general linguistic and reasoning capabilities.
 
 Traditional approaches to model editing rely on gradient-based fine-tuning or parameter modification, which may introduce unintended side effects or degrade general performance. In contrast, this work employs **Sparse Autoencoders (SAEs)** trained on internal transformer activations to identify interpretable features corresponding to specific knowledge domains. By selectively ablating these features during inference, it becomes possible to remove targeted knowledge in a controlled and interpretable manner.
 
 The approach focuses on identifying high-level features in the residual stream of the transformer that are strongly associated with Harry Potter concepts. These features are then suppressed at inference time using forward hooks, allowing the model to generate responses without relying on the removed knowledge.
+
+## Performance on Llama 7B
+
+The suppression is highly localized to the Harry Potter domain across both model versions. In the v2 Llama model, the HP domain shift (-0.82) is approximately 8x greater than the Fantasy domain shift (-0.25) and 27x greater than the Magic shift (-0.10), with Real World facts virtually unchanged (-0.03).
+
+![Performance metrics](results/plots/metrics_deltas.png)
+![General performance metrics](results/plots/general_metrics.png)
 
 ---
 
@@ -27,21 +35,21 @@ The approach focuses on identifying high-level features in the residual stream o
 
 ## Running the Project
 
-Pretrained model is available at [hugging face repo](https://huggingface.co/kiyohan/llama-hp-unlearning-artifacts/tree/main). It's automatically download from demo.py.
+A pretrained model and the required artifacts are available in the [Hugging Face repository](https://huggingface.co/kiyohan/llama-hp-unlearning-artifacts/tree/main). They are downloaded automatically by `demo.py`.
 
 ### Run Demo
 
 ```bash
-git clone https://github.com/Jay-G14/INLP_PROJECT.git
-cd INLP_PROJECT
+git clone https://github.com/kiyohan/inlp_project.git
+cd inlp_project
 
 # Install requirements
-pip  -r requirements.txt  
+python3 -m pip install -r requirements.txt
 
-# run demo
-# takes time to download LLama 7B (around 20 mins on LAN,
-#  needs sufficient VRAM and RAM)
-python3 demo.py 
+# Run the demo
+# This downloads Llama 7B and may take around 20 minutes on a LAN.
+# Sufficient VRAM and RAM are required.
+python3 demo.py
 ```
 
 
@@ -50,15 +58,14 @@ python3 demo.py
 | Action | Shortcut |
 |---|---|
 | Send prompt | `Enter` or `Ctrl+S` |
-| Toggle HP ablation on/off | `Ctrl+A` or click ** Ablation** button |
+| Toggle HP ablation on/off | `Ctrl+A` or click the **Ablation** button |
 | Quit | `Ctrl+Q` |
 
 ### What to Try
 
 - Ask **"Who is Harry Potter's best friend?"** with ablation **OFF** -> normal answer.
-- Ask the same with ablation **ON** -> model avoids HP-specific answers.
-- Ask a general question (history, science) with ablation ON -> general capability is preserved.
-
+- Ask the same question with ablation **ON** -> the model avoids HP-specific answers.
+- Ask a general question about history or science with ablation ON -> general capability is preserved.
 
 ---
 
@@ -74,17 +81,13 @@ The Harry Potter book series is processed and tokenized to produce sequences con
 
 **Neutral Corpus**
 
-A combination of WikiText-2 and TinyStories is used as a baseline dataset. The inclusion of general fiction prevents the sparse autoencoder from incorrectly identifying common fantasy terminology such as “wand” or “spell” as uniquely Harry Potter related.
-
----
+A combination of WikiText-2 and TinyStories is used as a baseline dataset. The inclusion of general fiction prevents the sparse autoencoder from incorrectly identifying common fantasy terminology such as "wand" or "spell" as uniquely Harry Potter related.
 
 ### Sparse Autoencoder Training
 
-Sparse autoencoders are trained on the **residual stream activations of llama-2-7b-chat  at layer 12**. The autoencoder learns a sparse representation of activations using a Top-K activation constraint.
+Sparse autoencoders are trained on the **residual stream activations of Llama-2-7B-Chat at layer 12**. The autoencoder learns a sparse representation of activations using a Top-K activation constraint.
 
-The goal of this representation is to decompose the residual stream into interpretable features that correspond to meaningful semantic patterns in the model’s internal computations.
-
----
+The goal of this representation is to decompose the residual stream into interpretable features that correspond to meaningful semantic patterns in the model's internal computations.
 
 ### Feature Identification
 
@@ -98,22 +101,18 @@ For each SAE feature:
 
 Features with significantly higher activation on the target corpus are considered domain-specific.
 
----
-
 ### Intervention
 
 Feature ablation is implemented using forward hooks through the **TransformerLens** framework.
 
 Selected SAE features are suppressed during the forward pass using a negative scaling factor. This intervention prevents the model from utilizing those features when generating text.
 
----
-
 ## Evaluation
 
 Evaluation focuses on two objectives:
 
 1. Measuring how effectively the model forgets Harry Potter knowledge.
-2. Ensuring that the model’s general capabilities remain intact.
+2. Ensuring that the model's general capabilities remain intact.
 
 The following metrics are used.
 
@@ -133,19 +132,16 @@ Perplexity on WikiText-2 to measure overall language modeling performance.
 
 Generated completions are manually inspected and optionally classified by an external language model.
 
----
+Detailed results and methodology are available in the [project report](Knowledge%20Unlearning%20in%20Language%20Models.pdf).
 
-Detailled results can be found in project report [link](https://drive.google.com/drive/folders/1-bFWjPwdDisxIkyIrfjX_ulYnhmD0wJJ)
+## Training Instructions Detailed
 
-
-## Training instructions detailed 
-
-- steps to reproduce our results : 
+Steps to reproduce the results:
 
 ```bash
 # Llama full local training run
 python main.py train \
-  --layer 15 --epochs 5 --batch_size 128 --expansion_factor 4 --k 8 \
+  --layer 15 --epochs 5 --batch_size 128 --expansion_factor 8 --k 32 \
   --sae_device cpu --model_device cuda
 
 # Llama feature discovery
