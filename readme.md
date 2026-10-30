@@ -26,8 +26,8 @@ The approach focuses on identifying high-level features in the residual stream o
 
 The suppression is highly localized to the Harry Potter domain across both model versions. In the v2 Llama model, the HP domain shift (-0.82) is approximately 8x greater than the Fantasy domain shift (-0.25) and 27x greater than the Magic shift (-0.10), with Real World facts virtually unchanged (-0.03).
 
-![Performance metrics](results/plots/metrics_deltas.png)
-![General performance metrics](results/plots/general_metrics.png)
+![Performance metrics](pics/result1.png)
+![General performance metrics](pics/result2.png)
 
 ---
 
